@@ -1,19 +1,19 @@
 from pathlib import Path
 import os
 from datetime import timedelta
+import dj_database_url  # Add this import at the top
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-replace-this-in-production-use-env-variable'
+# Pull critical security keys directly from the environment variables
+SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-insecure-key-for-local-dev-only')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Explicitly default to False if the env variable isn't string-matched to True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+# Allow local testing configurations + your upcoming production URLs
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
-# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -22,18 +22,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Third-party apps
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
     
-    # Local apps
     'core',
 ]
 
 MIDDLEWARE = [
-    # CORS Middleware MUST be at the top, right after SecurityMiddleware
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # CRITICAL: Serves static admin files safely on Render
     'corsheaders.middleware.CorsMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -45,69 +43,37 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'netflix_site.urls'
 
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
-
-WSGI_APPLICATION = 'netflix_site.wsgi.application'
-
-# Database
+# ════════════════════════════════════════════
+# DATABASE UPGRADE: SQLITE FALLBACK ➔ SUPABASE POSTGRES
+# ════════════════════════════════════════════
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600
+    )
 }
 
-# Password validation
-AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
-]
+# Keep your template, auth password validators, and internationalization intact here...
 
-# Internationalization
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True
-USE_TZ = True
-
-# Static and Media Files
+# Static File Optimization for WhiteNoise Production
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ──────────────────────────────────────────────────────────────────
-# STRICT API & SECURITY ENFORCEMENT
-# ──────────────────────────────────────────────────────────────────
-
-# 1. REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', # Locked down. No read-only bypassing.
+        'rest_framework.permissions.IsAuthenticated',
     ],
 }
 
-# 2. JWT Configuration
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
@@ -115,14 +81,15 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# 3. CORS Configuration (Fixes the Profile-ID Header block)
-CORS_ALLOW_ALL_ORIGINS = False # Disabled the massive security hole
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173', # Default Vite React port
-    'http://127.0.0.1:5173',
-]
+# ════════════════════════════════════════════
+# DYNAMIC CORS ORIGIN ENFORCEMENT
+# ════════════════════════════════════════════
+CORS_ALLOW_ALL_ORIGINS = False 
 
-# Explicitly whitelist standard headers PLUS the custom profile-id header
+# Parse production domains dynamically via environment variables
+raw_cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in raw_cors_origins.split(',')]
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -132,5 +99,5 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
-    'profile-id', # CRITICAL: This allows the React app to send the active sub-profile
+    'profile-id',
 ]

@@ -2,7 +2,10 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 
 const AuthContext = createContext(null);
 
-export const API = 'http://127.0.0.1:8000/api';
+// VITE_API_URL handles production gateways, while defaulting gracefully to your local machine
+export const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+
+// Keep the rest of your exact AuthProvider code below this line...
 
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
