@@ -1,6 +1,6 @@
 <div align="center">
 
-> 🚀 **Live Demo** → [havan-streaming-service.vercel.app](https://havan-streaming-service.vercel.app)
+<img src="https://i.imgur.com/placeholder-havan-logo.gif" alt="Havan Streaming Service" width="120" />
 
 # 🎬 Havan Streaming Service
 
@@ -24,7 +24,7 @@
 
 <br/>
 
-> **[Live Demo Placeholder]** — *Replace this line with your Vercel deployment URL*
+> 🚀 **Live Demo** → [havan-streaming-service.vercel.app](https://havan-streaming-service.vercel.app)
 
 <br/>
 
