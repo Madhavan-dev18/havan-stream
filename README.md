@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://i.imgur.com/placeholder-havan-logo.gif" alt="Havan Streaming Service" width="120" />
+> 🚀 **Live Demo** → [havan-streaming-service.vercel.app](https://havan-streaming-service.vercel.app)
 
 # 🎬 Havan Streaming Service
 
