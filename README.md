@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="https://i.imgur.com/placeholder-havan-logo.gif" alt="Havan Streaming Service" width="120" />
-
 # 🎬 Havan Streaming Service
 
 ### A production-ready, full-stack Video on Demand platform with adaptive HLS streaming, multi-profile user architecture, and decoupled cloud deployment.
@@ -24,12 +22,7 @@
 
 <br/>
 
-> 🚀 **Live Demo** → [havan-streaming-service.vercel.app](https://havan-streaming-service.vercel.app)
-
-<br/>
-
-<!-- Replace with an actual screen-capture GIF of the platform in action -->
-<img src="https://placehold.co/900x500/0f172a/3b82f6?text=Havan+Streaming+Service+%E2%80%94+Demo+GIF+Here" alt="Havan Platform Demo" width="900" style="border-radius:12px; border: 2px solid #1e293b;" />
+> 🚀 **Live Demo** → [https://havan-streaming-service.vercel.app](https://havan-streaming-service.vercel.app)
 
 </div>
 
@@ -45,6 +38,7 @@
 - [💻 Local Development Setup](#-local-development-setup)
 - [☁️ Deployment Strategy](#️-deployment-strategy)
 - [🔒 Security Architecture](#-security-architecture)
+- [📁 Project Structure](#-project-structure)
 
 ---
 
@@ -180,13 +174,11 @@ flowchart TD
         TS_CHUNKS["720p.ts / 1080p.ts\nVideo Segments"]
     end
 
-    %% Auth flow
     REACT -- "POST /api/login/\n{username, password}" --> CORS
     CORS --> GUNICORN --> DRF
     DRF -- "JWT access + refresh tokens" --> REACT
     AUTHCTX -- "Stores tokens" --> REACT
 
-    %% Authenticated API calls
     REACT -- "GET /api/movies/\nAuthorization: Bearer {access}\nProfile-Id: {id}" --> CORS
     CORS --> JWT
     JWT -- "Validated request" --> DRF
@@ -195,7 +187,6 @@ flowchart TD
     DB -- "Movie rows incl. hls_stream_url" --> DRF
     DRF -- "JSON response with hls_stream_url" --> REACT
 
-    %% HLS playback
     REACT -- "Passes hls_stream_url to hls.js" --> HLSJS
     HLSJS -- "GET master.m3u8\n(direct — no API)" --> M3U8
     M3U8 -- "Rendition playlist URLs" --> HLSJS
@@ -300,75 +291,24 @@ All endpoints are prefixed with `/api/`. Every protected route requires `Authori
 
 ### 🔑 Authentication
 
-<table>
-  <thead>
-    <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
-  </thead>
-  <tbody>
-    <tr><td><code>POST</code></td><td><code>/api/register/</code></td><td>Public</td><td>Create account. Auto-creates main profile. Returns JWT pair.</td></tr>
-    <tr><td><code>POST</code></td><td><code>/api/login/</code></td><td>Public</td><td>Authenticate with username + password. Returns JWT pair.</td></tr>
-    <tr><td><code>POST</code></td><td><code>/api/token/refresh/</code></td><td>Public</td><td>Rotate refresh token. Returns new access token.</td></tr>
-  </tbody>
-</table>
-
 ### 👤 Profiles
-
-<table>
-  <thead>
-    <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
-  </thead>
-  <tbody>
-    <tr><td><code>GET</code></td><td><code>/api/profiles/</code></td><td>JWT</td><td>List all profiles for the authenticated user (max 5).</td></tr>
-    <tr><td><code>POST</code></td><td><code>/api/profiles/</code></td><td>JWT</td><td>Create a sub-profile. Rejected if account already has 5 profiles.</td></tr>
-    <tr><td><code>GET</code></td><td><code>/api/profiles/{id}/</code></td><td>JWT</td><td>Retrieve a single profile by primary key.</td></tr>
-    <tr><td><code>PATCH</code></td><td><code>/api/profiles/{id}/</code></td><td>JWT</td><td>Partial update (name, avatar, PIN, genre preferences).</td></tr>
-    <tr><td><code>DELETE</code></td><td><code>/api/profiles/{id}/</code></td><td>JWT</td><td>Delete sub-profile. Blocked if <code>is_main=True</code>.</td></tr>
-    <tr><td><code>POST</code></td><td><code>/api/verify-pin/</code></td><td>JWT</td><td>Verify a profile PIN. Returns <code>403</code> on mismatch.</td></tr>
-  </tbody>
-</table>
 
 ### 🎬 Movies & Discovery
 
-<table>
-  <thead>
-    <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
-  </thead>
-  <tbody>
-    <tr><td><code>GET</code></td><td><code>/api/movies/</code></td><td>JWT</td><td>Catalogue with multi-axis filtering. See query params below.</td></tr>
-    <tr><td><code>GET</code></td><td><code>/api/movies/{id}/</code></td><td>JWT</td><td>Full movie detail: nested qualities, subtitles, audio tracks.</td></tr>
-    <tr><td><code>GET</code></td><td><code>/api/movies/featured/</code></td><td>JWT</td><td>Random featured movie, falls back to highest-popularity title.</td></tr>
-    <tr><td><code>GET</code></td><td><code>/api/movies/recommended/</code></td><td>JWT + Profile-Id</td><td>Personalised recommendations derived from profile genre history.</td></tr>
-    <tr><td><code>GET</code></td><td><code>/api/genres/</code></td><td>JWT</td><td>All genre objects for filter UI population.</td></tr>
-  </tbody>
-</table>
-
 **`/api/movies/` Query Parameters:**
 
-| Parameter  | Type     | Values / Example                                             |
-|------------|----------|--------------------------------------------------------------|
-| `genre`    | `string` | Genre name (case-insensitive) — `Action`, `Drama`           |
-| `language` | `string` | `English`, `Tamil`, `Hindi`                                  |
-| `country`  | `string` | `USA`, `India`                                               |
-| `year`     | `int`    | `2023`                                                       |
-| `rating`   | `string` | `G`, `PG`, `PG-13`, `R`, `NC-17`                            |
-| `search`   | `string` | Full-text search on `title` + `description`                  |
+| Parameter | Type | Values / Example |
+| --- | --- | --- |
+| `genre` | `string` | Genre name (case-insensitive) — `Action`, `Drama` |
+| `language` | `string` | `English`, `Tamil`, `Hindi` |
+| `country` | `string` | `USA`, `India` |
+| `year` | `int` | `2023` |
+| `rating` | `string` | `G`, `PG`, `PG-13`, `R`, `NC-17` |
+| `search` | `string` | Full-text search on `title` + `description` |
 | `category` | `string` | `trending`, `featured`, `award_winning`, `family_friendly`, `recently_added` |
-| `sort`     | `string` | `popularity`, `-popularity`, `release_year`, `-created_at`   |
+| `sort` | `string` | `popularity`, `-popularity`, `release_year`, `-created_at` |
 
 ### 📋 User Data
-
-<table>
-  <thead>
-    <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
-  </thead>
-  <tbody>
-    <tr><td><code>GET</code></td><td><code>/api/watchlist/</code></td><td>JWT + Profile-Id</td><td>Retrieve profile's saved titles.</td></tr>
-    <tr><td><code>POST</code></td><td><code>/api/watchlist/</code></td><td>JWT + Profile-Id</td><td>Add a movie. Idempotent — returns <code>400</code> if already present.</td></tr>
-    <tr><td><code>DELETE</code></td><td><code>/api/watchlist/</code></td><td>JWT + Profile-Id</td><td>Remove a movie by <code>movie_id</code> in request body.</td></tr>
-    <tr><td><code>GET</code></td><td><code>/api/history/</code></td><td>JWT + Profile-Id</td><td>Retrieve watch history with <code>progress_secs</code> and completion status.</td></tr>
-    <tr><td><code>POST</code></td><td><code>/api/history/</code></td><td>JWT + Profile-Id</td><td>Upsert progress. Fires on every 10-second playback tick.</td></tr>
-  </tbody>
-</table>
 
 ---
 
@@ -376,19 +316,19 @@ All endpoints are prefixed with `/api/`. Every protected route requires `Authori
 
 ### Backend — Django (`/` root, served from Render)
 
-| Variable                 | Required | Description                                                                 | Example Value                                         |
-|--------------------------|----------|-----------------------------------------------------------------------------|-------------------------------------------------------|
-| `SECRET_KEY`             | ✅        | Django cryptographic signing key. Generate with `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` | `django-insecure-...`                            |
-| `DEBUG`                  | ✅        | Must be `False` in production                                               | `False`                                               |
-| `ALLOWED_HOSTS`          | ✅        | Comma-separated list of valid Host headers                                  | `your-app.onrender.com,localhost`                     |
-| `DATABASE_URL`           | ✅        | Supabase IPv4 Connection Pooler URI (Transaction mode, port `6543`)         | `postgresql://user:pass@aws-0-us-east-1.pooler.supabase.com:6543/postgres` |
-| `CORS_ALLOWED_ORIGINS`   | ✅        | Comma-separated list of permitted request origins (no trailing slash)       | `https://your-app.vercel.app,http://localhost:5173`   |
+| Variable | Required | Description | Example Value |
+| --- | --- | --- | --- |
+| `SECRET_KEY` | ✅ | Django cryptographic signing key. Generate with `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` | `django-insecure-...` |
+| `DEBUG` | ✅ | Must be `False` in production | `False` |
+| `ALLOWED_HOSTS` | ✅ | Comma-separated list of valid Host headers | `your-app.onrender.com,localhost` |
+| `DATABASE_URL` | ✅ | Supabase IPv4 Connection Pooler URI (Transaction mode, port `6543`) | `postgresql://user:pass@aws-0-us-east-1.pooler.supabase.com:6543/postgres` |
+| `CORS_ALLOWED_ORIGINS` | ✅ | Comma-separated list of permitted request origins (no trailing slash) | `https://your-app.vercel.app,http://localhost:5173` |
 
 ### Frontend — Vite React (`havan-frontend/`)
 
-| Variable         | Required | Description                                          | Example Value                              |
-|------------------|----------|------------------------------------------------------|--------------------------------------------|
-| `VITE_API_URL`   | ✅        | Fully qualified URL of the Django API, no trailing slash | `https://your-app.onrender.com/api`     |
+| Variable | Required | Description | Example Value |
+| --- | --- | --- | --- |
+| `VITE_API_URL` | ✅ | Fully qualified URL of the Django API, no trailing slash | `https://your-app.onrender.com/api` |
 
 > **Note:** In the Vite build, only variables prefixed with `VITE_` are exposed to the client bundle. All other variables remain server-side.
 
@@ -397,18 +337,18 @@ All endpoints are prefixed with `/api/`. Every protected route requires `Authori
 ## 💻 Local Development Setup
 
 **Prerequisites:**
-- Python 3.11+ (production target: 3.12+)
-- Node.js 20+ and npm
-- Git
-- A running PostgreSQL instance **or** a Supabase project URI (SQLite is also supported for pure local dev via the `dj-database-url` fallback)
 
-<details>
-<summary><strong>⚙️ Backend Setup — Django + DRF</strong></summary>
+* Python 3.11+ (production target: 3.12+)
+* Node.js 20+ and npm
+* Git
+* A running PostgreSQL instance **or** a Supabase project URI (SQLite is also supported for pure local dev via the `dj-database-url` fallback)
+
+### Backend Setup
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Madhavan-dev18/Havan-Straming-Service.git
-cd Havan-Straming-Service
+git clone https://github.com/Madhavan-dev18/Havan-Streaming-Service.git
+cd Havan-Streaming-Service
 
 # 2. Create and activate a virtual environment
 python -m venv venv
@@ -442,15 +382,13 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-The API will be available at `http://127.0.0.1:8000/api/`.  
+The API will be available at `http://127.0.0.1:8000/api/`.
+
 The Django Admin panel is at `http://127.0.0.1:8000/admin/`.
 
 > **HLS Content:** To test streaming, open the Admin panel, create a `Movie` record, and paste a publicly accessible `.m3u8` URL (e.g., from a Supabase Storage bucket or any CORS-permissive CDN) into the `hls_stream_url` field.
 
-</details>
-
-<details>
-<summary><strong>⚛️ Frontend Setup — React + Vite</strong></summary>
+### Frontend Setup
 
 ```bash
 # 1. Navigate to the frontend directory
@@ -479,22 +417,17 @@ npm run build
 # This dist/ directory is what Vercel deploys.
 ```
 
-</details>
-
-<details>
-<summary><strong>🧱 Django Admin — Configuring Content</strong></summary>
+### Admin Media Management
 
 The `MovieAdmin` configuration exposes inline editors for all related media models directly on the Movie edit page:
 
-| Inline Section    | Model           | Purpose                                     |
-|-------------------|-----------------|---------------------------------------------|
-| Video Qualities   | `VideoQuality`  | Add per-resolution HLS stream URLs and bitrates |
-| Subtitles         | `Subtitle`      | Attach WebVTT files per language            |
-| Audio Tracks      | `AudioTrack`    | Add dubbed language stream URLs             |
+| Inline Section | Model | Purpose |
+| --- | --- | --- |
+| Video Qualities | `VideoQuality` | Add per-resolution HLS stream URLs and bitrates |
+| Subtitles | `Subtitle` | Attach WebVTT files per language |
+| Audio Tracks | `AudioTrack` | Add dubbed language stream URLs |
 
 Navigate to `/admin/core/movie/add/` to create your first movie with full media assets.
-
-</details>
 
 ---
 
@@ -504,52 +437,21 @@ The platform is decomposed into three independent, stateless services. No servic
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                     PRODUCTION TOPOLOGY                              │
-│                                                                     │
-│   ┌──────────────────┐      HTTPS       ┌────────────────────────┐  │
-│   │  Vercel (CDN)    │ ◄──────────────► │   Render (Web Service) │  │
-│   │  React SPA       │                  │   Gunicorn + Django    │  │
-│   │  Static Bundle   │                  │   DRF API              │  │
-│   └──────────────────┘                  └──────────┬─────────────┘  │
-│                                                    │ dj-database-url │
-│                                         ┌──────────▼─────────────┐  │
-│                                         │  Supabase PostgreSQL   │  │
-│                                         │  PgBouncer Pooler      │  │
-│                                         │  Port 6543 (IPv4)      │  │
-│                                         └────────────────────────┘  │
+│                     PRODUCTION TOPOLOGY                                │
+│                                                                         │
+│   ┌──────────────────┐      HTTPS       ┌────────────────────────┐   │
+│   │  Vercel (CDN)     │◄────────────────►│  Render (Web Service)  │   │
+│   │  React SPA        │                  │  Gunicorn + Django     │   │
+│   │  Static Bundle    │                  │  DRF API               │   │
+│   └──────────────────┘                  └──────────┬─────────────┘   │
+│                                                      │ dj-database-url │
+│                                           ┌──────────▼─────────────┐   │
+│                                           │  Supabase PostgreSQL   │   │
+│                                           │  PgBouncer Pooler      │   │
+│                                           │  Port 6543 (IPv4)      │   │
+│                                           └────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
-
-<table>
-  <thead>
-    <tr>
-      <th>Service</th>
-      <th>Platform</th>
-      <th>Configuration</th>
-      <th>Key Detail</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>🔵 <strong>Backend API</strong></td>
-      <td>Render</td>
-      <td>Web Service, <code>Procfile</code> driven</td>
-      <td><code>gunicorn netflix_site.wsgi:application --bind 0.0.0.0:$PORT</code>. WhiteNoise serves Django static files without a separate Nginx process.</td>
-    </tr>
-    <tr>
-      <td>⚫ <strong>Frontend SPA</strong></td>
-      <td>Vercel</td>
-      <td>Framework Preset: Vite, Root: <code>havan-frontend/</code>, Build: <code>npm run build</code>, Output: <code>dist/</code></td>
-      <td>All client-side routes resolve to <code>index.html</code> via Vercel's SPA rewrite rules. Set <code>VITE_API_URL</code> in Vercel Environment Variables.</td>
-    </tr>
-    <tr>
-      <td>🟢 <strong>Database</strong></td>
-      <td>Supabase</td>
-      <td>Transaction Mode Connection Pooler, Port <code>6543</code></td>
-      <td><code>dj_database_url.config()</code> parses the <code>DATABASE_URL</code> environment variable. <code>conn_max_age=600</code> is set for persistent connection efficiency under the pooler.</td>
-    </tr>
-  </tbody>
-</table>
 
 **Render Deployment Checklist:**
 
@@ -560,12 +462,19 @@ The platform is decomposed into three independent, stateless services. No servic
 5. Set `ALLOWED_HOSTS` to include your Render service hostname (e.g., `your-app.onrender.com`).
 6. Set `CORS_ALLOWED_ORIGINS` to your Vercel deployment URL.
 
+**Vercel Deployment Checklist:**
+
+1. Import the repository into Vercel and set the **Root Directory** to `havan-frontend`.
+2. Set **Build Command** to: `npm run build`
+3. Set **Output Directory** to: `dist`
+4. Add `VITE_API_URL` pointing to your live Render API (e.g., `https://your-app.onrender.com/api`).
+
 ---
 
 ## 🔒 Security Architecture
 
 | Layer | Mechanism | Configuration |
-|---|---|---|
+| --- | --- | --- |
 | **Transport** | HTTPS enforced at platform level | Render + Vercel provision TLS by default |
 | **Origin Control** | `django-cors-headers` allowlist | `CORS_ALLOW_ALL_ORIGINS = False`; origins loaded from env var at startup |
 | **Authentication** | JWT Bearer tokens (SimpleJWT) | Access TTL: 1 day · Refresh TTL: 30 days · `ROTATE_REFRESH_TOKENS = True` |
@@ -581,7 +490,7 @@ The platform is decomposed into three independent, stateless services. No servic
 ## 📁 Project Structure
 
 ```
-Havan-Straming-Service/
+Havan-Streaming-Service/
 ├── Procfile                        # Gunicorn start command for Render
 ├── requirements.txt                # All Python dependencies (pinned versions)
 ├── manage.py
